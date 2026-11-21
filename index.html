@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b4fb3">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Comptoir · Chez Chacha</title>
+<style>
+:root{--bg:#f3f7fd;--card:#fff;--tx:#0f1f3a;--mu:#5b6b85;--bl:#0b4fb3;--bl2:#e4eeff;--ok:#12805c;--ko:#c0392b;--bd:#d5e0f2}
+@media(prefers-color-scheme:dark){:root{--bg:#0c1424;--card:#142038;--tx:#e8eefb;--mu:#93a4c4;--bl:#5c9bff;--bl2:#1b2e52;--ok:#3ec79a;--ko:#ff7b6b;--bd:#27395c}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,sans-serif;padding:env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom))}
+header{background:var(--bl);color:#fff;padding:12px 16px}header b{font-size:20px;letter-spacing:.5px}
+main{max-width:760px;margin:auto;padding:12px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 8px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.it{background:var(--bl2);border:1px solid var(--bd);border-radius:10px;padding:10px;text-align:left;color:var(--tx);font:inherit;cursor:pointer}
+.it span{display:block;color:var(--bl);font-weight:700;font-size:14px}
+input,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit;margin:4px 0}
+button.b{background:var(--bl);color:#fff;border:0;border-radius:8px;padding:12px 16px;font:inherit;font-weight:600;width:100%;margin-top:6px}
+button.s{background:var(--bl2);color:var(--bl);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:inherit}
+.r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)}
+.r:last-child{border:0}.mu{color:var(--mu);font-size:13px}.big{font-size:26px;font-weight:800;color:var(--bl)}
+.p{display:flex;gap:8px}.p button{flex:1}.p .on{background:var(--bl);color:#fff}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;color:var(--mu);padding:14px 2px;font:inherit;font-size:13px}nav .on{color:var(--bl);font-weight:700;box-shadow:inset 0 3px var(--bl)}
+.er{color:var(--ko);font-size:14px}
+</style></head><body>
+<header><b>COMPTOIR</b><div style="font-size:12px;opacity:.9">Caisse et bilan · Chez Chacha</div></header>
+<main id="m"></main><nav id="nv"></nav>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DR=[["Vodka",10000],["Grand",8500],["Red la Belle",10000],["Amarula",6000],["VAT",6500],["Beaufort",600],["33",600],["Jin Tonic",600],["Heineken",500],["Black",600],["Ngo’k",700],["Primus",700],["Racine",600],["Sangria",500],["Château de France",500],["Jus",600],["Booster rouge",600],["Cuca",500],["Eka",500],["Vody",800],["3X",500],["Savana",1500],["Petite Castel",400],["Grosse Castel",700],["Desperado",1500],["Holandia",1000],["Eau petit format",250],["Eau grand format",500],["Guinness",600],["Bavaria",800],["Vin rouge et blanc (Ch Valac)",7000],["Vin rouge et blanc (Montmeyrac)",5000]];
+let D;try{D=JSON.parse(localStorage.getItem("chacha"))}catch(e){}
+if(!D||!D.items)D={items:DR.map(x=>({n:x[0],p:x[1]})),sales:[],exps:[],dishes:[]};D.dishes=D.dishes||[];
+let warn="",tab="caisse",cart={},pay="Espèces",day=null,err="";
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
+function save(){try{localStorage.setItem("chacha",JSON.stringify(D));warn=""}catch(e){warn="Mémoire de l’appareil pleine : les dernières données risquent de ne pas être gardées. Faites une sauvegarde."}}
+// La journée change à 5 h du matin : un service qui dépasse minuit reste sur la même journée.
+const today=()=>new Date(Date.now()-5*36e5).toLocaleDateString("sv"),fmt=n=>Math.round(n).toLocaleString("fr-FR")+" FCFA";
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+function render(){const T=[["caisse","Caisse"],["plats","Plats"],["dep","Dépenses"],["bilan","Bilan"],["art","Articles"]],m=$("#m");
+$("#nv").innerHTML=T.map(t=>`<button class="${tab==t[0]?"on":""}" onclick="tab='${t[0]}';err='';render()">${t[1]}</button>`).join("");
+({caisse:vCaisse,plats:vPlats,dep:vDep,bilan:vBilan,art:vArt})[tab](m);if(warn)m.insertAdjacentHTML("afterbegin",`<div class="c er">${esc(warn)}</div>`)}
+const itm=k=>k[0]=="a"?D.items[+k.slice(1)]:D.dishes.find(x=>x.id==k.slice(1));
+function vCaisse(m){const L=Object.keys(cart).filter(k=>itm(k)),T=L.reduce((a,k)=>a+itm(k).p*cart[k],0),ds=D.dishes.filter(x=>x.day==today());
+m.innerHTML=`<div class="c"><h2>Panier</h2>${L.length?L.map(k=>`<div class="r"><span>${esc(itm(k).n)}<br><span class="mu">${fmt(itm(k).p)}</span></span><span><button class="s" onclick="addC('${k}',-1)">−</button> <b>${cart[k]}</b> <button class="s" onclick="addC('${k}',1)">+</button></span></div>`).join(""):'<p class="mu">Touchez un article pour l’ajouter.</p>'}
+<div class="r"><b>Total</b><span class="big">${fmt(T)}</span></div><div class="p"><button class="s ${pay=="Espèces"?"on":""}" onclick="pay='Espèces';render()">Espèces</button><button class="s ${pay=="Mobile Money"?"on":""}" onclick="pay='Mobile Money';render()">Mobile Money</button><button class="s ${pay=="Impayé"?"on":""}" onclick="pay='Impayé';render()">Impayé</button></div>${pay=="Impayé"?'<input id="cl" placeholder="Nom du client (obligatoire)">':""}<button class="b" onclick="valid()">Valider la vente</button><p class="er">${esc(err)}</p></div>
+${ds.length?`<div class="c"><h2>Plats du jour</h2><div class="g">${ds.map(x=>`<button class="it" onclick="addC('p${x.id}')">${esc(x.n)}<span>${fmt(x.p)}</span></button>`).join("")}</div></div>`:""}
+<div class="c"><h2>Boissons</h2><div class="g">${D.items.map((x,i)=>`<button class="it" onclick="addC('a${i}')">${esc(x.n)}<span>${fmt(x.p)}</span></button>`).join("")}</div></div>`}
+function addC(k,d=1){cart[k]=(cart[k]||0)+d;if(cart[k]<=0)delete cart[k];err="";render()}
+function valid(){const L=Object.keys(cart).filter(k=>itm(k));if(!L.length){err="Le panier est vide.";return render()}
+const cl=pay=="Impayé"?($("#cl")?$("#cl").value.trim():""):"";if(pay=="Impayé"&&!cl){err="Indiquez le nom du client pour une vente impayée.";return render()}
+const i=L.map(k=>({n:itm(k).n,p:itm(k).p,q:cart[k],k:k[0]}));D.sales.push({id:uid(),at:new Date().toISOString(),day:today(),i,t:i.reduce((a,l)=>a+l.p*l.q,0),m:pay,c:cl});save();cart={};pay="Espèces";err="";render()}
+function pay2(id,m){const x=D.sales.find(s=>s.id==id);if(!x||!confirm("Marquer cette vente comme payée ("+m+") ?"))return;x.m=m;x.pd=today();save();render()}
+function del(k,id){if(!confirm("Supprimer cette ligne définitivement ?"))return;D[k]=D[k].filter(x=>x.id!=id);save();render()}
+function vPlats(m){const d=D.dishes.filter(x=>x.day==today()),pd=[...new Set(D.dishes.map(x=>x.day))].filter(x=>x<today()).sort().pop();
+m.innerHTML=`<div class="c"><h2>Menu du jour</h2><p class="mu">À saisir chaque jour : le plat et son prix.</p><input id="n" placeholder="Nom du plat"><input id="p" type="number" inputmode="numeric" placeholder="Prix (FCFA)"><button class="b" onclick="addD()">Ajouter au menu</button><p class="er">${esc(err)}</p></div>
+<div class="c"><h2>Menu d’aujourd’hui</h2>${d.length?d.map(x=>`<div class="r"><span>${esc(x.n)} · <b>${fmt(x.p)}</b></span><button class="s" onclick="del('dishes','${x.id}')">Retirer</button></div>`).join(""):'<p class="mu">Aucun plat saisi aujourd’hui.</p>'}${!d.length&&pd?`<button class="s" style="margin-top:8px;width:100%" onclick="copyM('${pd}')">Reprendre le menu du ${pd}</button>`:""}</div>`}
+function addD(){const n=$("#n").value.trim(),p=+$("#p").value;if(!n||!(p>0)){err="Indiquez un nom et un prix.";return render()}D.dishes.push({id:uid(),day:today(),n,p});save();err="";render()}
+function copyM(d){D.dishes.filter(x=>x.day==d).forEach(x=>D.dishes.push({id:uid(),day:today(),n:x.n,p:x.p}));save();render()}
+function vDep(m){const d=D.exps.filter(x=>x.day==today());m.innerHTML=`<div class="c"><h2>Enregistrer une dépense</h2><input id="l" placeholder="Motif (viande, charbon, transport…)"><input id="a" type="number" inputmode="numeric" placeholder="Montant (FCFA)"><button class="b" onclick="addE()">Enregistrer</button><p class="er">${esc(err)}</p></div><div class="c"><h2>Dépenses d’aujourd’hui</h2>${d.length?d.map(x=>`<div class="r"><span>${esc(x.l)} · <b>${fmt(x.a)}</b></span><button class="s" onclick="del('exps','${x.id}')">Supprimer</button></div>`).join(""):'<p class="mu">Aucune dépense aujourd’hui.</p>'}</div>`}
+function addE(){const l=$("#l").value.trim(),a=+$("#a").value;if(!l||!(a>0)){err="Indiquez un motif et un montant.";return render()}D.exps.push({id:uid(),at:new Date().toISOString(),day:today(),l,a});save();err="";render()}
+function tot(d){const s=D.sales.filter(x=>x.day==d),v=s.reduce((a,x)=>a+x.t,0),es=s.filter(x=>x.m=="Espèces").reduce((a,x)=>a+x.t,0),ip=s.filter(x=>x.m=="Impayé").reduce((a,x)=>a+x.t,0),pl=s.reduce((a,x)=>a+x.i.filter(l=>l.k=="p").reduce((b,l)=>b+l.p*l.q,0),0),dp=D.exps.filter(x=>x.day==d).reduce((a,x)=>a+x.a,0);return{v,es,mm:v-es-ip,ip,dp,sol:v-dp,cash:v-ip-dp,n:s.length,pl,bo:v-pl}}
+function vBilan(m){day=day||today();const t=tot(day),s=D.sales.filter(x=>x.day==day).slice().reverse(),e=D.exps.filter(x=>x.day==day),days=[...new Set([...D.sales,...D.exps].map(x=>x.day))].sort().reverse().slice(0,10),ui=D.sales.filter(x=>x.m=="Impayé").slice().reverse();
+m.innerHTML=`<div class="c"><h2>Bilan du jour</h2><input type="date" value="${day}" onchange="day=this.value||today();render()">
+<div class="r"><span>Ventes (${t.n})</span><b>${fmt(t.v)}</b></div><div class="r"><span>dont boissons</span><span>${fmt(t.bo)}</span></div><div class="r"><span>dont plats</span><span>${fmt(t.pl)}</span></div><div class="r"><span>dont Espèces</span><span>${fmt(t.es)}</span></div><div class="r"><span>dont Mobile Money</span><span>${fmt(t.mm)}</span></div><div class="r"><span>dont impayé</span><span>${fmt(t.ip)}</span></div><div class="r"><span>Dépenses</span><b>${fmt(t.dp)}</b></div><div class="r"><b>Solde (ventes − dépenses)</b><span class="big">${fmt(t.sol)}</span></div><div class="r"><span>En caisse (encaissé − dépenses)</span><b>${fmt(t.cash)}</b></div></div>
+<div class="c"><h2>Ventes</h2>${s.length?s.map(x=>`<div class="r"><span>${new Date(x.at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})} · ${x.i.map(l=>l.q+"× "+esc(l.n)).join(", ")}<br><span class="mu">${x.m}${x.c?" · "+esc(x.c):""}</span></span><span><b>${fmt(x.t)}</b> <button class="s" onclick="del('sales','${x.id}')">Supprimer</button></span></div>`).join(""):'<p class="mu">Aucune vente ce jour.</p>'}</div>
+<div class="c"><h2>Dépenses</h2>${e.length?e.map(x=>`<div class="r"><span>${esc(x.l)}</span><span><b>${fmt(x.a)}</b> <button class="s" onclick="del('exps','${x.id}')">Supprimer</button></span></div>`).join(""):'<p class="mu">Aucune dépense ce jour.</p>'}</div>
+<div class="c"><h2>Impayés à encaisser${ui.length?" · "+fmt(ui.reduce((a,x)=>a+x.t,0)):""}</h2>${ui.length?ui.map(x=>`<div class="r"><span>${esc(x.c||"?")} · ${x.day}<br><button class="s" onclick="pay2('${x.id}','Espèces')">Payé espèces</button> <button class="s" onclick="pay2('${x.id}','Mobile Money')">Payé Mobile Money</button></span><b>${fmt(x.t)}</b></div>`).join(""):'<p class="mu">Aucun impayé.</p>'}</div>
+<div class="c"><h2>Derniers jours</h2>${days.map(d=>{const z=tot(d);return`<div class="r" onclick="day='${d}';render()" style="cursor:pointer"><span>${d}</span><span>${fmt(z.v)} − ${fmt(z.dp)} = <b>${fmt(z.sol)}</b></span></div>`}).join("")||'<p class="mu">Pas encore d’historique.</p>'}</div>`}
+function vArt(m){m.innerHTML=`<div class="c"><h2>Articles et prix</h2><p class="mu">Un article par ligne, au format Nom;Prix. Les ventes déjà faites gardent leur ancien prix.</p><textarea id="dl" rows="14">${esc(D.items.map(x=>x.n+";"+x.p).join("\n"))}</textarea><button class="b" onclick="saveA()">Enregistrer les articles</button></div>
+<div class="c"><h2>Sauvegarde</h2><p class="mu">Téléchargez une copie de vos données régulièrement. Vous pouvez aussi l’importer sur un autre appareil : les ventes et dépenses s’ajoutent sans doublons.</p><button class="b" onclick="exp()">Télécharger la sauvegarde</button><p class="mu" style="margin-top:12px">Importer une sauvegarde :</p><input type="file" accept=".json,application/json" onchange="imp(this.files[0])"></div>`}
+function saveA(){const l=$("#dl").value.split("\n").map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.lastIndexOf(";");if(i<1)return{n:"",p:0};return{n:x.slice(0,i).trim(),p:+x.slice(i+1).replace(/\s/g,"")}});if(!l.length||l.some(x=>!x.n||!(x.p>0)))return alert("Chaque ligne doit avoir le format Nom;Prix, avec un prix supérieur à 0.");D.items=l;cart={};save();alert("Articles enregistrés.");render()}
+function exp(){const b=new Blob([JSON.stringify(D)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="comptoir-"+today()+".json";a.click()}
+function imp(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const X=JSON.parse(r.result),have=new Set([...D.sales,...D.exps,...D.dishes].map(x=>x.id));let n=0;["sales","exps","dishes"].forEach(k=>(X[k]||[]).forEach(x=>{if(x.id&&!have.has(x.id)){D[k].push(x);n++}}));save();alert(n+" élément(s) ajouté(s).");render()}catch(e){alert("Fichier illisible.")}};r.readAsText(f)}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+render();
+</script></body></html>
